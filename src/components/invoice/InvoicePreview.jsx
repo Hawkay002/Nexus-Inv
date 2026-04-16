@@ -1,16 +1,30 @@
-import { forwardRef } from 'react';
+import { forwardRef, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
-import Barcode from 'react-barcode';
+import JsBarcode from 'jsbarcode';
 
 const InvoicePreview = forwardRef(({ invoice, config }, ref) => {
+  const barcodeRef = useRef(null);
+
+  useEffect(() => {
+    if (barcodeRef.current && invoice) {
+      JsBarcode(barcodeRef.current, invoice.id.toString(), {
+        format: "CODE128",
+        width: 1.5,
+        height: 40,
+        fontSize: 12,
+        displayValue: true,
+        margin: 0
+      });
+    }
+  }, [invoice]);
+
   if (!invoice || !config) return null;
 
   const upiLink = `upi://pay?pa=${config.upiId}&pn=${encodeURIComponent(config.ownerName)}&am=${invoice.total.toFixed(2)}&cu=INR`;
 
   return (
     <div className="overflow-x-auto w-full bg-premium-50 p-4 rounded-xl border border-premium-100 flex justify-center">
-      {/* A4 Landscape Dimensions strictly set for high-quality export */}
       <div ref={ref} className="bg-white text-premium-900 p-10 shadow-sm w-[297mm] h-[210mm] relative" style={{ boxSizing: 'border-box' }}>
         
         {/* Header */}
@@ -86,8 +100,8 @@ const InvoicePreview = forwardRef(({ invoice, config }, ref) => {
               <QRCodeSVG value={upiLink} size={90} className="mb-2 mx-auto" />
               <p className="text-xs font-medium text-premium-700 uppercase tracking-wider">Scan to Pay UPI</p>
             </div>
-            <div className="flex flex-col justify-end">
-               <Barcode value={invoice.id.toString()} format="CODE128" width={1.5} height={40} fontSize={12} displayValue={true} />
+            <div className="flex flex-col justify-end items-center">
+               <svg ref={barcodeRef}></svg>
                <p className="text-xs font-medium text-premium-700 uppercase tracking-wider text-center mt-2">Invoice Code</p>
             </div>
           </div>
