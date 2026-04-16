@@ -80,7 +80,15 @@ export default function GenerateTab({ config, bills, saveBills }) {
     setCurrAc('');
 
     // Capture Invoice
-    const canvas = await html2canvas(invoiceRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const canvas = await html2canvas(invoiceRef.current, { 
+  scale: 2, 
+  useCORS: true, 
+  backgroundColor: '#ffffff',
+  width: 1123,
+  height: 794,
+  windowWidth: 1123,
+  windowHeight: 794
+});
     canvas.toBlob(async (blob) => {
       const file = new File([blob], `Invoice_${generatedInvoice.id}.png`, { type: 'image/png' });
       const caption = `Invoice Date: ${format(new Date(generatedInvoice.date), 'dd MMM yyyy, hh:mm a')}`;
