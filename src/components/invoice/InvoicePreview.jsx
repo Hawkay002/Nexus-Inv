@@ -23,94 +23,127 @@ const InvoicePreview = forwardRef(({ invoice, config }, ref) => {
 
   const upiLink = `upi://pay?pa=${config.upiId}&pn=${encodeURIComponent(config.ownerName)}&am=${invoice.total.toFixed(2)}&cu=INR`;
 
+  // Standard premium colors
+  const colors = {
+    primary: '#0F172A', secondary: '#334155', border: '#F1F5F9', bg: '#F8FAFC',
+    successText: '#15803D', successBg: '#F0FDF4', successBorder: '#BBF7D0',
+    pendingText: '#B45309', pendingBg: '#FFFBEB', pendingBorder: '#FDE68A'
+  };
+
+  const isPaid = invoice.status === 'paid';
+
   return (
     <div className="overflow-x-auto w-full bg-premium-50 p-4 rounded-xl border border-premium-100 flex justify-center">
-      <div ref={ref} className="bg-white text-premium-900 p-10 shadow-sm w-[297mm] h-[210mm] relative" style={{ boxSizing: 'border-box' }}>
-        
+      
+      {/* Inject fonts explicitly so the export canvas can read them */}
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700&display=swap');`}
+      </style>
+
+      {/* Strict Inline Styles to prevent stretching and class stripping */}
+      <div 
+        ref={ref} 
+        style={{ 
+          width: '1123px', 
+          height: '794px', 
+          backgroundColor: '#ffffff',
+          color: colors.primary,
+          padding: '40px',
+          boxSizing: 'border-box',
+          fontFamily: "'Inter', sans-serif",
+          position: 'relative'
+        }}
+      >
         {/* Header */}
-        <div className="flex justify-between items-start border-b-2 border-premium-100 pb-6 mb-6">
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `2px solid ${colors.border}`, paddingBottom: '24px', marginBottom: '24px' }}>
           <div>
-            <h1 className="text-4xl font-display font-bold text-premium-900 tracking-tight">INVOICE</h1>
-            <p className="text-premium-700 mt-2 font-mono">#{invoice.id}</p>
+            <h1 style={{ margin: 0, fontSize: '36px', fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: colors.primary, letterSpacing: '-0.02em' }}>INVOICE</h1>
+            <p style={{ margin: '8px 0 0 0', color: colors.secondary, fontFamily: "'JetBrains Mono', monospace", fontSize: '16px' }}>#{invoice.id}</p>
           </div>
-          <div className="text-right">
-            <p className="font-semibold text-lg text-premium-900">Date Issued</p>
-            <p className="text-premium-700">{format(new Date(invoice.date), 'dd MMM yyyy, hh:mm a')}</p>
-            <div className={`mt-3 inline-block px-4 py-1 rounded-full text-sm font-semibold border ${invoice.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ margin: 0, fontWeight: 600, fontSize: '18px', color: colors.primary }}>Date Issued</p>
+            <p style={{ margin: '4px 0 0 0', color: colors.secondary, fontSize: '16px' }}>{format(new Date(invoice.date), 'dd MMM yyyy, hh:mm a')}</p>
+            <div style={{
+              marginTop: '12px', display: 'inline-block', padding: '4px 16px', borderRadius: '9999px', fontSize: '14px', fontWeight: 600,
+              backgroundColor: isPaid ? colors.successBg : colors.pendingBg,
+              color: isPaid ? colors.successText : colors.pendingText,
+              border: `1px solid ${isPaid ? colors.successBorder : colors.pendingBorder}`
+            }}>
               {invoice.status.toUpperCase()}
             </div>
           </div>
         </div>
 
         {/* Parties */}
-        <div className="grid grid-cols-2 gap-12 mb-8">
-          <div>
-            <h3 className="text-sm font-semibold uppercase text-premium-700 tracking-wider mb-2">Billed By</h3>
-            <p className="font-display text-xl font-semibold">{config.ownerName}</p>
-            <p className="text-premium-700 mt-1">{config.ownerPhone}</p>
+        <div style={{ display: 'flex', gap: '48px', marginBottom: '32px' }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', color: colors.secondary, letterSpacing: '0.05em' }}>Billed By</h3>
+            <p style={{ margin: 0, fontFamily: "'Outfit', sans-serif", fontSize: '20px', fontWeight: 600, color: colors.primary }}>{config.ownerName}</p>
+            <p style={{ margin: '4px 0 0 0', color: colors.secondary, fontSize: '16px' }}>{config.ownerPhone}</p>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold uppercase text-premium-700 tracking-wider mb-2">Billed To</h3>
-            <p className="font-display text-xl font-semibold">{config.tenantName}</p>
-            <p className="text-premium-700 mt-1">{config.tenantPhone}</p>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', color: colors.secondary, letterSpacing: '0.05em' }}>Billed To</h3>
+            <p style={{ margin: 0, fontFamily: "'Outfit', sans-serif", fontSize: '20px', fontWeight: 600, color: colors.primary }}>{config.tenantName}</p>
+            <p style={{ margin: '4px 0 0 0', color: colors.secondary, fontSize: '16px' }}>{config.tenantPhone}</p>
           </div>
         </div>
 
         {/* Breakdown Table */}
-        <table className="w-full text-left mb-8 border-collapse">
+        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginBottom: '32px' }}>
           <thead>
-            <tr className="border-b-2 border-premium-100 text-premium-900">
-              <th className="py-3 font-semibold uppercase text-sm tracking-wider">Description</th>
-              <th className="py-3 font-semibold uppercase text-sm tracking-wider text-right">Units/Details</th>
-              <th className="py-3 font-semibold uppercase text-sm tracking-wider text-right">Amount</th>
+            <tr style={{ borderBottom: `2px solid ${colors.border}` }}>
+              <th style={{ padding: '12px 0', fontWeight: 600, textTransform: 'uppercase', fontSize: '14px', color: colors.primary }}>Description</th>
+              <th style={{ padding: '12px 0', fontWeight: 600, textTransform: 'uppercase', fontSize: '14px', textAlign: 'right', color: colors.primary }}>Units/Details</th>
+              <th style={{ padding: '12px 0', fontWeight: 600, textTransform: 'uppercase', fontSize: '14px', textAlign: 'right', color: colors.primary }}>Amount</th>
             </tr>
           </thead>
-          <tbody className="text-premium-800">
-            <tr className="border-b border-premium-50">
-              <td className="py-4 font-medium">Monthly Rent</td>
-              <td className="py-4 text-right text-premium-700">-</td>
-              <td className="py-4 text-right font-medium">₹{invoice.rent.toFixed(2)}</td>
+          <tbody>
+            <tr style={{ borderBottom: `1px solid ${colors.bg}` }}>
+              <td style={{ padding: '16px 0', fontWeight: 500, fontSize: '16px' }}>Monthly Rent</td>
+              <td style={{ padding: '16px 0', textAlign: 'right', color: colors.secondary }}>-</td>
+              <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: 500, fontSize: '16px' }}>₹{invoice.rent.toFixed(2)}</td>
             </tr>
-            <tr className="border-b border-premium-50">
-              <td className="py-4 font-medium">Water Charges</td>
-              <td className="py-4 text-right text-premium-700">-</td>
-              <td className="py-4 text-right font-medium">₹{invoice.water.toFixed(2)}</td>
+            <tr style={{ borderBottom: `1px solid ${colors.bg}` }}>
+              <td style={{ padding: '16px 0', fontWeight: 500, fontSize: '16px' }}>Water Charges</td>
+              <td style={{ padding: '16px 0', textAlign: 'right', color: colors.secondary }}>-</td>
+              <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: 500, fontSize: '16px' }}>₹{invoice.water.toFixed(2)}</td>
             </tr>
-            <tr className="border-b border-premium-50">
-              <td className="py-4 font-medium">Electricity</td>
-              <td className="py-4 text-right text-premium-700">
-                {invoice.prevElectricity} → {invoice.currElectricity} ({invoice.elecUnits} units @ ₹{config.electricityRate})
+            <tr style={{ borderBottom: `1px solid ${colors.bg}` }}>
+              <td style={{ padding: '16px 0', fontWeight: 500, fontSize: '16px' }}>Electricity</td>
+              <td style={{ padding: '16px 0', textAlign: 'right', color: colors.secondary }}>
+                {invoice.prevElectricity} &rarr; {invoice.currElectricity} ({invoice.elecUnits} units @ ₹{config.electricityRate})
               </td>
-              <td className="py-4 text-right font-medium">₹{invoice.elecCharge.toFixed(2)}</td>
+              <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: 500, fontSize: '16px' }}>₹{invoice.elecCharge.toFixed(2)}</td>
             </tr>
-            <tr className="border-b border-premium-50">
-              <td className="py-4 font-medium">Air Conditioning</td>
-              <td className="py-4 text-right text-premium-700">
-                {invoice.prevAC} → {invoice.currAC} ({invoice.acUnits} units @ ₹{config.acRate})
+            <tr style={{ borderBottom: `1px solid ${colors.bg}` }}>
+              <td style={{ padding: '16px 0', fontWeight: 500, fontSize: '16px' }}>Air Conditioning</td>
+              <td style={{ padding: '16px 0', textAlign: 'right', color: colors.secondary }}>
+                {invoice.prevAC} &rarr; {invoice.currAC} ({invoice.acUnits} units @ ₹{config.acRate})
               </td>
-              <td className="py-4 text-right font-medium">₹{invoice.acCharge.toFixed(2)}</td>
+              <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: 500, fontSize: '16px' }}>₹{invoice.acCharge.toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
 
         {/* Footer & Totals */}
-        <div className="flex justify-between items-end mt-auto pt-6 border-t-2 border-premium-100 absolute bottom-10 left-10 right-10">
-          <div className="flex gap-8">
-            <div className="text-center bg-premium-50 p-4 rounded-xl border border-premium-100">
-              <QRCodeSVG value={upiLink} size={90} className="mb-2 mx-auto" />
-              <p className="text-xs font-medium text-premium-700 uppercase tracking-wider">Scan to Pay UPI</p>
+        <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: '24px', borderTop: `2px solid ${colors.border}` }}>
+          <div style={{ display: 'flex', gap: '32px' }}>
+            <div style={{ textAlign: 'center', backgroundColor: colors.bg, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}` }}>
+              <QRCodeSVG value={upiLink} size={90} style={{ marginBottom: '8px' }} />
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 500, color: colors.secondary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Scan to Pay UPI</p>
             </div>
-            <div className="flex flex-col justify-end items-center">
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center' }}>
                <svg ref={barcodeRef}></svg>
-               <p className="text-xs font-medium text-premium-700 uppercase tracking-wider text-center mt-2">Invoice Code</p>
+               <p style={{ margin: '8px 0 0 0', fontSize: '12px', fontWeight: 500, color: colors.secondary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Invoice Code</p>
             </div>
           </div>
           
-          <div className="text-right bg-premium-900 text-white p-6 rounded-2xl shadow-lg w-72">
-             <p className="text-sm font-medium uppercase tracking-wider text-premium-100 mb-1">Total Amount Due</p>
-             <p className="text-4xl font-display font-bold tracking-tight">₹{invoice.total.toFixed(2)}</p>
+          <div style={{ textAlign: 'right', backgroundColor: colors.primary, color: '#ffffff', padding: '24px', borderRadius: '16px', width: '280px' }}>
+             <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: colors.border }}>Total Amount Due</p>
+             <p style={{ margin: 0, fontSize: '36px', fontFamily: "'Outfit', sans-serif", fontWeight: 700, letterSpacing: '-0.02em' }}>₹{invoice.total.toFixed(2)}</p>
           </div>
         </div>
+
       </div>
     </div>
   );
