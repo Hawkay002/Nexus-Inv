@@ -35,7 +35,7 @@ export default function GenerateTab({ config, bills, saveBills }) {
 
   const handleGenerate = (e) => {
     e.preventDefault();
-    if (prevValues.elec === '' || prevValues.ac === '') return alert('Please set previous values first.');
+    if (!prevValues.elec || !prevValues.ac) return alert('Please set previous values first.');
     
     const elecUnits = currElec - prevValues.elec;
     const acUnits = currAc - prevValues.ac;
@@ -68,30 +68,27 @@ export default function GenerateTab({ config, bills, saveBills }) {
   const finalizeAndShare = async () => {
     if (!invoiceRef.current) return;
     
+    // Save to State
     const updatedBills = [generatedInvoice, ...bills];
     saveBills(updatedBills);
 
+    // Update Previous Values
     const newPrev = { elec: currElec, ac: currAc };
     setPrevValues(newPrev);
     localStorage.setItem('nexus_prev_readings', JSON.stringify(newPrev));
     setCurrElec('');
     setCurrAc('');
 
-    // Force strict dimensions in the export so it never stretches
-    const canvas = await html2canvas(invoiceRef.current, { 
-      scale: 2, 
-      useCORS: true, 
-      backgroundColor: '#ffffff',
-      width: 1123,
-      height: 794
-    });
-    
+    // Capture Invoice
+    const canvas = await html2canvas(invoiceRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
     canvas.toBlob(async (blob) => {
       const file = new File([blob], `Invoice_${generatedInvoice.id}.png`, { type: 'image/png' });
       const caption = `Invoice Date: ${format(new Date(generatedInvoice.date), 'dd MMM yyyy, hh:mm a')}`;
       
+      // Save to Telegram
       await sendInvoiceToTelegram(blob, caption);
 
+      // Web Share API WhatsApp
       const shareText = `Here is the rent invoice for ${format(new Date(), 'MMMM yyyy')}.\nTotal Amount: ₹${generatedInvoice.total.toFixed(2)}`;
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -100,6 +97,7 @@ export default function GenerateTab({ config, bills, saveBills }) {
           text: shareText
         });
       } else {
+        // Fallback: Download and redirect
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -115,38 +113,37 @@ export default function GenerateTab({ config, bills, saveBills }) {
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight">Generate Invoice</h2>
-        <p className="text-premium-700 mt-1 text-sm md:text-base">{format(new Date(), 'EEEE, MMMM do, yyyy | hh:mm a')}</p>
+        <h2 className="text-3xl font-display font-bold tracking-tight">Generate Invoice</h2>
+        <p className="text-premium-700 mt-1">{format(new Date(), 'EEEE, MMMM do, yyyy | hh:mm a')}</p>
       </div>
 
-      {/* Grid shifts to 1 column on mobile, 2 on desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 gap-6">
+        {/* Previous Stats Edit */}
         <div className="bg-white p-6 rounded-2xl border border-premium-100 shadow-sm flex items-center justify-between group">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center"><Zap /></div>
+            <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center"><Zap /></div>
             <div>
-              <p className="text-xs md:text-sm font-medium text-premium-700">Previous Electricity</p>
-              <p className="text-xl md:text-2xl font-display font-semibold">{prevValues.elec !== '' ? prevValues.elec : '--'}</p>
+              <p className="text-sm font-medium text-premium-700">Previous Electricity</p>
+              <p className="text-2xl font-display font-semibold">{prevValues.elec || '--'}</p>
             </div>
           </div>
-          <button onClick={() => handleEditPrev('elec')} className="p-2 text-premium-700 hover:text-accent-600 hover:bg-accent-50 rounded-lg md:opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={18} /></button>
+          <button onClick={() => handleEditPrev('elec')} className="p-2 text-premium-700 hover:text-accent-600 hover:bg-accent-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={18} /></button>
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-premium-100 shadow-sm flex items-center justify-between group">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Wind /></div>
+            <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Wind /></div>
             <div>
-              <p className="text-xs md:text-sm font-medium text-premium-700">Previous AC</p>
-              <p className="text-xl md:text-2xl font-display font-semibold">{prevValues.ac !== '' ? prevValues.ac : '--'}</p>
+              <p className="text-sm font-medium text-premium-700">Previous AC</p>
+              <p className="text-2xl font-display font-semibold">{prevValues.ac || '--'}</p>
             </div>
           </div>
-          <button onClick={() => handleEditPrev('ac')} className="p-2 text-premium-700 hover:text-accent-600 hover:bg-accent-50 rounded-lg md:opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={18} /></button>
+          <button onClick={() => handleEditPrev('ac')} className="p-2 text-premium-700 hover:text-accent-600 hover:bg-accent-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={18} /></button>
         </div>
       </div>
 
-      <form onSubmit={handleGenerate} className="bg-white p-6 md:p-8 rounded-2xl border border-premium-100 shadow-sm space-y-6">
-        {/* Inputs stack on mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <form onSubmit={handleGenerate} className="bg-white p-8 rounded-2xl border border-premium-100 shadow-sm space-y-6">
+        <div className="grid grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-premium-900 mb-2">Current Electricity Reading</label>
             <input type="number" required className="input-field" value={currElec} onChange={e => setCurrElec(e.target.value)} placeholder="Enter reading" />
@@ -159,6 +156,7 @@ export default function GenerateTab({ config, bills, saveBills }) {
         <button type="submit" className="btn-primary w-full py-4 text-lg">Generate & Preview</button>
       </form>
 
+      {/* Edit Prev Modals */}
       <CustomModal isOpen={editModal.isOpen} onClose={() => setEditModal({ isOpen: false, field: null, value: '' })} title={`Edit Previous ${editModal.field === 'elec' ? 'Electricity' : 'AC'}`} maxWidth="max-w-md">
         <div className="space-y-4">
           <input type="number" className="input-field" value={editModal.value} onChange={e => setEditModal({ ...editModal, value: e.target.value })} autoFocus />
@@ -168,9 +166,10 @@ export default function GenerateTab({ config, bills, saveBills }) {
         </div>
       </CustomModal>
 
-      <CustomModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Invoice Preview" maxWidth="max-w-[1200px]">
-        <div className="mb-4 flex justify-end">
-           <button onClick={finalizeAndShare} className="btn-primary w-full md:w-auto"><Share2 size={18}/> Finalize & Share</button>
+      {/* Preview Invoice Modal */}
+      <CustomModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Invoice Preview" maxWidth="max-w-[1000px]">
+        <div className="mb-6 flex justify-end gap-4">
+           <button onClick={finalizeAndShare} className="btn-primary"><Share2 size={18}/> Finalize & Share</button>
         </div>
         <InvoicePreview invoice={generatedInvoice} config={config} ref={invoiceRef} />
       </CustomModal>
